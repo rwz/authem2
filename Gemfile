@@ -4,9 +4,12 @@ source 'https://rubygems.org'
 gemspec
 
 group :test do
-  gem "activerecord", "~> 4.0"
+  gem "activerecord",  "~> 4.0"
+  gem "actionpack",    "~> 4.0"
   gem "rake"
-  gem "rspec"
+  gem "rspec-rails"
+  gem "capybara"
   gem "sqlite3"
   gem "pry-debugger"
+  gem "combustion"
 end

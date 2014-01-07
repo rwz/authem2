@@ -1,3 +1,4 @@
+require "authem/railtie"
 require "authem/version"
 
 module Authem
