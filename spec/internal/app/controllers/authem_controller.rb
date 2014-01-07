@@ -5,9 +5,9 @@ class AuthemController < ApplicationController
     render text: current_user.inspect
   end
 
-  def sign_in_joe
-    # @user = User.new(email: "joe@example.com")
-    # sign_in @user
-    # render nothing: true
+  def sign_in_as_joe
+    @user = User.create(email: "joe@example.com")
+    sign_in @user
+    render nothing: true
   end
 end

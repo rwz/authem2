@@ -19,5 +19,12 @@ class User < ActiveRecord::Base
 end
 
 RSpec.configure do |config|
-  config.before(:suite) { TestMigration.up }
+  config.before(:suite) { TestMigration.new.up }
+
+  config.around do |example|
+    ActiveRecord::Base.transaction do
+      example.run
+      raise ActiveRecord::Rollback
+    end
+  end
 end
