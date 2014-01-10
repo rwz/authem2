@@ -2,14 +2,17 @@ require "spec_helper"
 
 
 describe Authem::Controller do
-  BaseController = Class.new{ include Authem::Controller }
-  let(:session){ HashWithIndifferentAccess.new }
-  let(:controller){ controller_klass.new }
-  let(:another_controller) do
-    controller_klass.new.tap do |instance|
-      instance.stub(session: controller.session)
+  class BaseController
+    include Authem::Controller
+
+    def reload!
+      self.class.new.tap{ |instance| instance.stub(session: self.session) }
     end
   end
+
+  let(:session){ HashWithIndifferentAccess.new }
+  let(:controller){ controller_klass.new }
+  let(:another_controller) { controller.reload! }
 
   before { controller.stub(session: session) }
 
@@ -26,6 +29,43 @@ describe Authem::Controller do
     it "has sign_in_user method" do
       expect(controller).to respond_to(:sign_in_user)
     end
+
+    it "has clear_all_sessions_for_user method" do
+      expect(controller).to respond_to(:clear_all_sessions_for_user)
+    end
+
+    it "can clear all sessions using clear_all_sessions method" do
+      expect(controller).to receive(:clear_all_sessions_for_user).with(user)
+      controller.clear_all_sessions_for user
+    end
+
+    it "raises error when calling clear_all_sessions_for with nil" do
+      expect{ controller.clear_all_sessions_for nil }.to raise_error(ArgumentError)
+      expect{ controller.clear_all_sessions_for_user nil }.to raise_error(ArgumentError)
+    end
+
+    context "with multiple sessions across devices" do
+      let(:first_device) { controller }
+      let(:second_device) do
+        controller_klass.new.tap do |instance|
+          instance.stub(session: HashWithIndifferentAccess.new)
+        end
+      end
+
+      before do
+        first_device.sign_in user
+        second_device.sign_in user
+      end
+
+      it "signs out all currently active sessions on all devices" do
+        action = ->{ first_device.clear_all_sessions_for_user user }
+        expect(&action).to change{ ::Authem::Session.count }.by(-2)
+        expect(second_device.reload!.current_user).to be_nil
+      end
+    end
+
+
+
 
     it "can sign in user using sign_in_user method" do
       controller.sign_in_user user

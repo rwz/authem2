@@ -60,6 +60,12 @@ module Authem
 
           session.delete session_key
         end
+
+        define_method "clear_all_sessions_for_#{role}" do |model|
+          raise ArgumentError if model.nil?
+          public_send "sign_out_#{role}"
+          ::Authem::Session.by_subject(model).where(role: role).delete_all
+        end
       end
     end
 

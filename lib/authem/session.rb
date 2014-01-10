@@ -6,6 +6,7 @@ module Authem
       self.table_name = :authem_sessions
 
       belongs_to :subject, polymorphic: true
+      scope :by_subject, ->(model){ where(subject_type: model.class.name, subject_id: model.id) }
 
       before_save do
         self.token ||= SecureRandom.hex(40)
