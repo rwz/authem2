@@ -10,7 +10,7 @@ module Authem
       @controller = controller
     end
 
-    def get_authem_role_for(model)
+    def authem_role_for(model)
       raise ArgumentError if model.nil?
 
       match = settings.each_with_object([]) do |(role, klass), array|
