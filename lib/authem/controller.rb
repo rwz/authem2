@@ -9,20 +9,12 @@ module Authem
 
     module SignInMethod
       def sign_in(model, options={})
-        role = options.fetch(:as) do
-          controller_helper = Authem::ControllerHelper.new(self.class)
-          controller_helper.get_authem_name_for(model)
-        end
-
+        role = options.fetch(:as){ self.class.get_authem_role_for(model) }
         public_send "sign_in_#{role}", model
       end
 
       def sign_out(model, options={})
-        role = options.fetch(:as) do
-          controller_helper = Authem::ControllerHelper.new(self.class)
-          controller_helper.get_authem_name_for(model)
-        end
-
+        role = options.fetch(:as){ self.class.get_authem_role_for(model) }
         public_send "sign_out_#{role}"
       end
     end
@@ -31,8 +23,15 @@ module Authem
       def authem_for(model_name, options={})
         include SignInMethod
 
-        controller_helper = Authem::ControllerHelper.new(self)
-        controller_helper.define_authem model_name, options
+        authem_controller.define_authem model_name, options
+      end
+
+      def get_authem_role_for(model)
+        authem_controller.get_authem_role_for(model)
+      end
+
+      def authem_controller
+        ControllerHelper.new(self)
       end
     end
   end

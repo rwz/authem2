@@ -21,12 +21,11 @@ module Authem
       @controller = controller
     end
 
-    def get_authem_name_for(model)
+    def get_authem_role_for(model)
       raise ArgumentError if model.nil?
 
-      given_klass = model.class
-      match = settings.each_with_object([]) do |(name, klass), array|
-        array << name if given_klass == klass
+      match = settings.each_with_object([]) do |(role, klass), array|
+        array << role if model.class == klass
       end
 
       raise UnknownEntityError.new(model) if match.empty?
@@ -35,14 +34,13 @@ module Authem
       match.first
     end
 
-    def define_authem(name, options = {})
-      method_name = "current_#{name}"
+    def define_authem(role, options = {})
+      method_name = "current_#{role}"
       session_key = "authem_#{method_name}"
       ivar_name   = "@_#{session_key}"
-      klass       = options.fetch(:model){ name.to_s.classify.constantize }
+      klass       = options.fetch(:model){ role.to_s.classify.constantize }
 
-      self.settings ||= {}
-      self.settings = settings.merge(name.to_sym => klass)
+      self.settings = settings.merge(role.to_sym => klass)
 
       controller.instance_eval do
         define_method method_name do
@@ -55,13 +53,14 @@ module Authem
           end
         end
 
-        define_method "sign_in_#{name}" do |model|
+        define_method "sign_in_#{role}" do |model|
           raise ArgumentError if model.nil?
+
           instance_variable_set ivar_name, model
           session[session_key] = model[model.class.primary_key]
         end
 
-        define_method "sign_out_#{name}" do
+        define_method "sign_out_#{role}" do
           instance_variable_set ivar_name, nil
           session.delete session_key
         end
@@ -70,13 +69,12 @@ module Authem
 
     protected
 
-    def settings
-      controller.authem_settings
-    end
-
     def settings=(value)
       controller.authem_settings = value
     end
 
+    def settings
+      controller.authem_settings ||= {}
+    end
   end
 end
