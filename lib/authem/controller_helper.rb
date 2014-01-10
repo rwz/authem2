@@ -59,7 +59,7 @@ module Authem
           raise ArgumentError if model.nil?
 
           instance_variable_set ivar_name, model
-          authem_session = ::Authem::Session.create(role: role, subject: model)
+          authem_session = ::Authem::Session.create!(role: role, subject: model)
           session[session_key] = authem_session.token
         end
 
