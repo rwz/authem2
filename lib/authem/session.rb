@@ -7,7 +7,9 @@ module Authem
 
       belongs_to :subject, polymorphic: true
 
-      before_save{ self.token ||= SecureRandom.hex(40) }
+      before_save do
+        self.token ||= SecureRandom.hex(40)
+      end
     end
   end
 end

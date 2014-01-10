@@ -13,7 +13,7 @@ describe Authem::Controller do
 
   before { controller.stub(session: session) }
 
-  context "with one entity" do
+  context "with one role" do
     let(:user) { User.create(email: "joe@example.com") }
     let(:controller_klass) do
       Class.new(BaseController) { authem_for :user }
@@ -40,8 +40,8 @@ describe Authem::Controller do
 
     it "raises an error when trying to sign in unknown model" do
       model = MyNamespace::SuperUser.create(email: "admin@example.com")
-      message = "Unknown authem entity: #{model.inspect}"
-      expect{ controller.sign_in model }.to raise_error(Authem::UnknownEntityError, message)
+      message = "Unknown authem role: #{model.inspect}"
+      expect{ controller.sign_in model }.to raise_error(Authem::UnknownRoleError, message)
     end
 
     it "raises an error when trying to sign in nil" do
@@ -86,7 +86,7 @@ describe Authem::Controller do
     end
   end
 
-  context "with multiple entities" do
+  context "with multiple roles" do
     let(:admin){ MyNamespace::SuperUser.create(email: "admin@example.com") }
     let(:controller_klass) do
       Class.new(BaseController) do
@@ -136,7 +136,7 @@ describe Authem::Controller do
     end
   end
 
-  context "multiple entities with same model class" do
+  context "multiple roles with same model class" do
     let(:user){ User.create(email: "joe@example.com") }
     let(:customer){ User.create(email: "shmoe@example.com") }
     let(:controller_klass) do
@@ -165,12 +165,12 @@ describe Authem::Controller do
 
     it "raises the error when sign in can't guess the model properly" do
       message = "Ambigous match for #{user.inspect}: user, customer"
-      expect{ controller.sign_in user }.to raise_error(Authem::AmbigousEntityError, message)
+      expect{ controller.sign_in user }.to raise_error(Authem::AmbigousRoleError, message)
     end
 
     it "raises the error when sign out can't guess the model properly" do
       message = "Ambigous match for #{user.inspect}: user, customer"
-      expect{ controller.sign_out user }.to raise_error(Authem::AmbigousEntityError, message)
+      expect{ controller.sign_out user }.to raise_error(Authem::AmbigousRoleError, message)
     end
   end
 end

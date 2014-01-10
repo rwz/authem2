@@ -1,20 +1,8 @@
 require "authem/session"
+require "authem/errors/ambigous_role"
+require "authem/errors/unknown_role"
 
 module Authem
-  class AmbigousEntityError < StandardError
-    def initialize(model, match)
-      message = "Ambigous match for #{model.inspect}: #{match * ', '}"
-      super message
-    end
-  end
-
-  class UnknownEntityError < StandardError
-    def initialize(model)
-      message = "Unknown authem entity: #{model.inspect}"
-      super message
-    end
-  end
-
   class ControllerHelper
     attr_reader :controller
 
@@ -29,8 +17,8 @@ module Authem
         array << role if model.class == klass
       end
 
-      raise UnknownEntityError.new(model) if match.empty?
-      raise AmbigousEntityError.new(model, match) unless match.one?
+      raise UnknownRoleError.new(model) if match.empty?
+      raise AmbigousRoleError.new(model, match) unless match.one?
 
       match.first
     end
