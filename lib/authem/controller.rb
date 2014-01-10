@@ -9,14 +9,21 @@ module Authem
 
     module SignInMethod
       def sign_in(model, options={})
-        raise ArgumentError if model.nil?
-
         role = options.fetch(:as) do
           controller_helper = Authem::ControllerHelper.new(self.class)
           controller_helper.get_authem_name_for(model)
         end
 
         public_send "sign_in_#{role}", model
+      end
+
+      def sign_out(model, options={})
+        role = options.fetch(:as) do
+          controller_helper = Authem::ControllerHelper.new(self.class)
+          controller_helper.get_authem_name_for(model)
+        end
+
+        public_send "sign_out_#{role}"
       end
     end
 

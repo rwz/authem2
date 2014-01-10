@@ -22,10 +22,11 @@ module Authem
     end
 
     def get_authem_name_for(model)
+      raise ArgumentError if model.nil?
+
       given_klass = model.class
-      match = settings.inject([]) do |memo, (name, klass)|
-        memo << name if given_klass == klass
-        memo
+      match = settings.each_with_object([]) do |(name, klass), array|
+        array << name if given_klass == klass
       end
 
       raise UnknownEntityError.new(model) if match.empty?
@@ -58,6 +59,11 @@ module Authem
           raise ArgumentError if model.nil?
           instance_variable_set ivar_name, model
           session[session_key] = model[model.class.primary_key]
+        end
+
+        define_method "sign_out_#{name}" do
+          instance_variable_set ivar_name, nil
+          session.delete session_key
         end
       end
     end
