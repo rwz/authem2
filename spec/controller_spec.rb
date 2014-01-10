@@ -75,6 +75,15 @@ describe Authem::Controller do
     it "raises an error when calling sign_out with nil" do
       expect{ controller.sign_out nil }.to raise_error(ArgumentError)
     end
+
+    it "persists session in database" do
+      expect{ controller.sign_in user }.to change{ ::Authem::Session.count }.by(1)
+    end
+
+    it "removes database session on sign out" do
+      controller.sign_in user
+      expect{ controller.sign_out user }.to change{ ::Authem::Session.count }.by(-1)
+    end
   end
 
   context "with multiple entities" do

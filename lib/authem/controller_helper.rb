@@ -1,5 +1,6 @@
-module Authem
+require "authem/session"
 
+module Authem
   class AmbigousEntityError < StandardError
     def initialize(model, match)
       message = "Ambigous match for #{model.inspect}: #{match * ', '}"
@@ -46,8 +47,9 @@ module Authem
         define_method method_name do
           if instance_variable_defined?(ivar_name)
             instance_variable_get(ivar_name)
-          elsif id = session[session_key]
-            instance_variable_set ivar_name, klass.find(id)
+          elsif token = session[session_key]
+            authem_session = ::Authem::Session.find_by(role: role, token: token)
+            instance_variable_set ivar_name, authem_session.try(:subject)
           else
             instance_variable_set ivar_name, nil
           end
@@ -57,11 +59,17 @@ module Authem
           raise ArgumentError if model.nil?
 
           instance_variable_set ivar_name, model
-          session[session_key] = model[model.class.primary_key]
+          authem_session = ::Authem::Session.create(role: role, subject: model)
+          session[session_key] = authem_session.token
         end
 
         define_method "sign_out_#{role}" do
           instance_variable_set ivar_name, nil
+
+          if token = session[session_key]
+            ::Authem::Session.where(role: role, token: token).delete_all
+          end
+
           session.delete session_key
         end
       end

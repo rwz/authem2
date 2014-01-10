@@ -6,17 +6,24 @@ ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:"
 class TestMigration < ActiveRecord::Migration
   def up
     create_table :users, force: true do |t|
-      t.column :email, :string
+      t.string :email
+    end
+
+    create_table :authem_sessions do |t|
+      t.string :role
+      t.references :subject, polymorphic: true
+      t.string :token, limit: 80
+      t.timestamps
     end
   end
 
   def down
-    drop_table :primary_strategy_users
+    drop_table :users
+    drop_table :authem_sessions
   end
 end
 
-class User < ActiveRecord::Base
-end
+class User < ActiveRecord::Base; end
 
 module MyNamespace
   class SuperUser < ActiveRecord::Base
