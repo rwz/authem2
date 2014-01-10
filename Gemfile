@@ -11,5 +11,4 @@ group :test do
   gem "capybara"
   gem "sqlite3"
   gem "pry-debugger"
-  gem "combustion"
 end
