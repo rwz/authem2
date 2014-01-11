@@ -3,7 +3,7 @@ require "authem/errors/ambigous_role"
 require "authem/errors/unknown_role"
 
 module Authem
-  class ControllerHelper
+  class Support
     attr_reader :controller
 
     def initialize(controller)

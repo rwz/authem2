@@ -1,5 +1,5 @@
 require "active_support/concern"
-require "authem/controller_helper"
+require "authem/support"
 
 module Authem
   module Controller
@@ -34,7 +34,7 @@ module Authem
       delegate :authem_role_for, to: :authem_controller
 
       def authem_controller
-        ControllerHelper.new(self)
+        Support.new(self)
       end
     end
   end
