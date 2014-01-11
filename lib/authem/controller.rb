@@ -20,7 +20,7 @@ module Authem
 
       def clear_all_sessions_for(model, options={})
         role = options.fetch(:as){ self.class.authem_role_for(model) }
-        public_send "clear_all_sessions_for_#{role}", model
+        public_send "clear_all_#{role}_sessions_for", model
       end
     end
 

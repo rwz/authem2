@@ -30,18 +30,18 @@ describe Authem::Controller do
       expect(controller).to respond_to(:sign_in_user)
     end
 
-    it "has clear_all_sessions_for_user method" do
-      expect(controller).to respond_to(:clear_all_sessions_for_user)
+    it "has clear_all_user_sessions_for method" do
+      expect(controller).to respond_to(:clear_all_user_sessions_for)
     end
 
     it "can clear all sessions using clear_all_sessions method" do
-      expect(controller).to receive(:clear_all_sessions_for_user).with(user)
+      expect(controller).to receive(:clear_all_user_sessions_for).with(user)
       controller.clear_all_sessions_for user
     end
 
     it "raises error when calling clear_all_sessions_for with nil" do
       expect{ controller.clear_all_sessions_for nil }.to raise_error(ArgumentError)
-      expect{ controller.clear_all_sessions_for_user nil }.to raise_error(ArgumentError)
+      expect{ controller.clear_all_user_sessions_for nil }.to raise_error(ArgumentError)
     end
 
     context "with multiple sessions across devices" do
@@ -58,7 +58,7 @@ describe Authem::Controller do
       end
 
       it "signs out all currently active sessions on all devices" do
-        action = ->{ first_device.clear_all_sessions_for_user user }
+        action = ->{ first_device.clear_all_user_sessions_for user }
         expect(&action).to change{ ::Authem::Session.count }.by(-2)
         expect(second_device.reload!.current_user).to be_nil
       end
