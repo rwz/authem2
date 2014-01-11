@@ -28,12 +28,12 @@ module Authem
       def authem_for(model_name, options={})
         include SessionManagementMethods
 
-        authem_controller.define_authem model_name, options
+        authem.define_authem model_name, options
       end
 
-      delegate :authem_role_for, to: :authem_controller
+      delegate :authem_role_for, to: :authem
 
-      def authem_controller
+      def authem
         Support.new(self)
       end
     end
