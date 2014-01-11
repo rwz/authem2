@@ -9,17 +9,17 @@ module Authem
 
     module SessionManagementMethods
       def sign_in(model, options={})
-        role = options.fetch(:as){ self.class.authem_role_for(model) }
+        role = options.fetch(:as){ self.class.authem.role_for(model) }
         public_send "sign_in_#{role}", model
       end
 
       def sign_out(model, options={})
-        role = options.fetch(:as){ self.class.authem_role_for(model) }
+        role = options.fetch(:as){ self.class.authem.role_for(model) }
         public_send "sign_out_#{role}"
       end
 
       def clear_all_sessions_for(model, options={})
-        role = options.fetch(:as){ self.class.authem_role_for(model) }
+        role = options.fetch(:as){ self.class.authem.role_for(model) }
         public_send "clear_all_#{role}_sessions_for", model
       end
     end
@@ -30,8 +30,6 @@ module Authem
 
         authem.define_authem model_name, options
       end
-
-      delegate :authem_role_for, to: :authem
 
       def authem
         Support.new(self)
