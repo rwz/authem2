@@ -43,11 +43,11 @@ module Authem
           end
         end
 
-        define_method "sign_in_#{role}" do |model|
+        define_method "sign_in_#{role}" do |model, **options|
           raise ArgumentError if model.nil?
 
           instance_variable_set ivar_name, model
-          authem_session = ::Authem::Session.create!(role: role, subject: model)
+          authem_session = ::Authem::Session.create!(role: role, subject: model, ttl: options[:ttl])
           session[session_key] = authem_session.token
           authem_session
         end

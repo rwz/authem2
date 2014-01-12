@@ -73,9 +73,25 @@ describe Authem::Controller do
       expect(result).to be_kind_of(::Authem::Session)
     end
 
-    it "can sing in usin sign_in method" do
-      expect(controller).to receive(:sign_in_user).with(user)
+    it "allows to specify ttl using sign_in_user with ttl option" do
+      session = controller.sign_in_user(user, ttl: 40.minutes)
+      expect(session.ttl).to eq(40.minutes)
+    end
+
+    it "forgets user after session has expired" do
+      session = controller.sign_in(user)
+      session.update_attribute :expires_at, 1.minute.ago
+      expect(reloaded_controller.current_user).to be_nil
+    end
+
+    it "can sing in using sign_in method" do
+      expect(controller).to receive(:sign_in_user).with(user, {})
       controller.sign_in user
+    end
+
+    it "allows to specify ttl using sign_in method with ttl option" do
+      session = controller.sign_in(user, ttl: 40.minutes)
+      expect(session.ttl).to eq(40.minutes)
     end
 
     it "raises an error when trying to sign in unknown model" do
@@ -150,7 +166,7 @@ describe Authem::Controller do
     end
 
     it "can sign in using sing_in method" do
-      expect(controller).to receive(:sign_in_admin).with(admin)
+      expect(controller).to receive(:sign_in_admin).with(admin, {})
       controller.sign_in admin
     end
 
@@ -210,7 +226,7 @@ describe Authem::Controller do
     end
 
     it "allows to specify role with special :as option" do
-      expect(controller).to receive(:sign_in_customer).with(user)
+      expect(controller).to receive(:sign_in_customer).with(user, {})
       controller.sign_in user, as: :customer
     end
 

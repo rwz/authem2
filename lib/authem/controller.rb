@@ -9,8 +9,8 @@ module Authem
 
     module SessionManagementMethods
       def sign_in(model, **options)
-        role = options.fetch(:as){ self.class.authem.role_for(model) }
-        public_send "sign_in_#{role}", model
+        role = options.delete(:as) || self.class.authem.role_for(model)
+        public_send "sign_in_#{role}", model, options
       end
 
       def sign_out(model, **options)
