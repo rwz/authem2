@@ -5,7 +5,7 @@ ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:"
 
 class TestMigration < ActiveRecord::Migration
   def up
-    create_table :users, force: true do |t|
+    create_table :users do |t|
       t.string :email
     end
 
