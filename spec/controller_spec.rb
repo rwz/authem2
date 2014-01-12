@@ -10,14 +10,13 @@ describe Authem::Controller do
     end
   end
 
-  SESSIONS_COUNT = ->{ ::Authem::Session.count }
-
   def build_controller
     controller_klass.new.tap{ |c| c.stub(session: HashWithIndifferentAccess.new) }
   end
 
   let(:controller) { build_controller }
   let(:reloaded_controller) { controller.reloaded }
+  let(:sessions_count){ ::Authem::Session.method(:count) }
 
   context "with one role" do
     let(:user) { User.create(email: "joe@example.com") }
@@ -58,7 +57,7 @@ describe Authem::Controller do
 
       it "signs out all currently active sessions on all devices" do
         action = ->{ first_device.clear_all_user_sessions_for user }
-        expect(&action).to change(&SESSIONS_COUNT).by(-2)
+        expect(&action).to change(&sessions_count).by(-2)
         expect(second_device.reloaded.current_user).to be_nil
       end
     end
@@ -118,12 +117,12 @@ describe Authem::Controller do
     end
 
     it "persists session in database" do
-      expect{ controller.sign_in user }.to change(&SESSIONS_COUNT).by(1)
+      expect{ controller.sign_in user }.to change(&sessions_count).by(1)
     end
 
     it "removes database session on sign out" do
       controller.sign_in user
-      expect{ controller.sign_out user }.to change(&SESSIONS_COUNT).by(-1)
+      expect{ controller.sign_out user }.to change(&sessions_count).by(-1)
     end
   end
 
