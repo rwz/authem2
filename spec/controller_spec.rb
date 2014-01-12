@@ -152,6 +152,7 @@ describe Authem::Controller do
 
     context "with signed in user and admin" do
       let(:user) { User.create(email: "joe@example.com") }
+
       before do
         controller.sign_in_user user
         controller.sign_in_admin admin
@@ -202,6 +203,11 @@ describe Authem::Controller do
     it "raises the error when sign in can't guess the model properly" do
       message = "Ambigous match for #{user.inspect}: user, customer"
       expect{ controller.sign_in user }.to raise_error(Authem::AmbigousRoleError, message)
+    end
+
+    it "allows to specify role with special :as option" do
+      expect(controller).to receive(:sign_in_customer).with(user)
+      controller.sign_in user, as: :customer
     end
 
     it "raises the error when sign out can't guess the model properly" do
