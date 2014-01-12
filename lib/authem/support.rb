@@ -36,7 +36,7 @@ module Authem
           if instance_variable_defined?(ivar_name)
             instance_variable_get(ivar_name)
           elsif token = session[session_key]
-            authem_session = ::Authem::Session.find_by(role: role, token: token)
+            authem_session = ::Authem::Session.active.find_by(role: role, token: token)
             instance_variable_set ivar_name, authem_session.try(:subject)
           else
             instance_variable_set ivar_name, nil
@@ -49,6 +49,7 @@ module Authem
           instance_variable_set ivar_name, model
           authem_session = ::Authem::Session.create!(role: role, subject: model)
           session[session_key] = authem_session.token
+          authem_session
         end
 
         define_method "sign_out_#{role}" do

@@ -69,6 +69,11 @@ describe Authem::Controller do
       expect(reloaded_controller.current_user).to eq(user)
     end
 
+    it "returns session object on sign in" do
+      result = controller.sign_in_user(user)
+      expect(result).to be_kind_of(::Authem::Session)
+    end
+
     it "can sing in usin sign_in method" do
       expect(controller).to receive(:sign_in_user).with(user)
       controller.sign_in user
