@@ -80,8 +80,16 @@ describe Authem::Controller do
 
     it "forgets user after session has expired" do
       session = controller.sign_in(user)
-      session.update_attribute :expires_at, 1.minute.ago
+      session.update_column :expires_at, 1.minute.ago
       expect(reloaded_controller.current_user).to be_nil
+    end
+
+    it "renews session ttl every time it is used" do
+      session = controller.sign_in(user, ttl: 1.day)
+      session.update_column :expires_at, 1.minute
+      reloaded_controller.current_user
+      session.reload
+      # expect(session.reload.expires_at).to be_within(1).of(1.day)
     end
 
     it "can sing in using sign_in method" do

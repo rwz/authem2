@@ -10,10 +10,11 @@ class TestMigration < ActiveRecord::Migration
     end
 
     create_table :authem_sessions do |t|
-      t.string       :role, null: false
-      t.references   :subject, polymorphic: true, null: false
-      t.string       :token, limit: 80, null: false
-      t.datetime     :expires_at, null: false
+      t.string     :role,       null: false
+      t.references :subject,    null: false, polymorphic: true
+      t.string     :token,      null: false, limit: 80
+      t.datetime   :expires_at, null: false
+      t.integer    :ttl,        null: false
       t.timestamps
     end
   end

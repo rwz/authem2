@@ -37,7 +37,8 @@ module Authem
             instance_variable_get(ivar_name)
           elsif token = session[session_key]
             authem_session = ::Authem::Session.active.find_by(role: role, token: token)
-            instance_variable_set ivar_name, authem_session.try(:subject)
+            subject = authem_session && authem_session.refresh && authem_session.subject
+            instance_variable_set ivar_name, subject
           else
             instance_variable_set ivar_name, nil
           end
