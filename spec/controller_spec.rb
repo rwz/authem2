@@ -5,16 +5,19 @@ describe Authem::Controller do
   class BaseController
     include Authem::Controller
 
-    def reload!
+    def reloaded
       self.class.new.tap{ |instance| instance.stub(session: self.session) }
     end
   end
 
-  let(:session){ HashWithIndifferentAccess.new }
-  let(:controller){ controller_klass.new }
-  let(:another_controller) { controller.reload! }
+  SESSIONS_COUNT = ->{ ::Authem::Session.count }
 
-  before { controller.stub(session: session) }
+  def build_controller
+    controller_klass.new.tap{ |c| c.stub(session: HashWithIndifferentAccess.new) }
+  end
+
+  let(:controller) { build_controller }
+  let(:reloaded_controller) { controller.reloaded }
 
   context "with one role" do
     let(:user) { User.create(email: "joe@example.com") }
@@ -46,11 +49,7 @@ describe Authem::Controller do
 
     context "with multiple sessions across devices" do
       let(:first_device) { controller }
-      let(:second_device) do
-        controller_klass.new.tap do |instance|
-          instance.stub(session: HashWithIndifferentAccess.new)
-        end
-      end
+      let(:second_device) { build_controller }
 
       before do
         first_device.sign_in user
@@ -59,18 +58,15 @@ describe Authem::Controller do
 
       it "signs out all currently active sessions on all devices" do
         action = ->{ first_device.clear_all_user_sessions_for user }
-        expect(&action).to change{ ::Authem::Session.count }.by(-2)
-        expect(second_device.reload!.current_user).to be_nil
+        expect(&action).to change(&SESSIONS_COUNT).by(-2)
+        expect(second_device.reloaded.current_user).to be_nil
       end
     end
-
-
-
 
     it "can sign in user using sign_in_user method" do
       controller.sign_in_user user
       expect(controller.current_user).to eq(user)
-      expect(another_controller.current_user).to eq(user)
+      expect(reloaded_controller.current_user).to eq(user)
     end
 
     it "can sing in usin sign_in method" do
@@ -102,13 +98,13 @@ describe Authem::Controller do
       it "can sign out using sign_out_user method" do
         controller.sign_out_user
         expect(controller.current_user).to be_nil
-        expect(another_controller.current_user).to be_nil
+        expect(reloaded_controller.current_user).to be_nil
       end
 
       it "can sign out using sign_out method" do
         controller.sign_out user
         expect(controller.current_user).to be_nil
-        expect(another_controller.current_user).to be_nil
+        expect(reloaded_controller.current_user).to be_nil
       end
     end
 
@@ -117,17 +113,17 @@ describe Authem::Controller do
     end
 
     it "persists session in database" do
-      expect{ controller.sign_in user }.to change{ ::Authem::Session.count }.by(1)
+      expect{ controller.sign_in user }.to change(&SESSIONS_COUNT).by(1)
     end
 
     it "removes database session on sign out" do
       controller.sign_in user
-      expect{ controller.sign_out user }.to change{ ::Authem::Session.count }.by(-1)
+      expect{ controller.sign_out user }.to change(&SESSIONS_COUNT).by(-1)
     end
   end
 
   context "with multiple roles" do
-    let(:admin){ MyNamespace::SuperUser.create(email: "admin@example.com") }
+    let(:admin) { MyNamespace::SuperUser.create(email: "admin@example.com") }
     let(:controller_klass) do
       Class.new(BaseController) do
         authem_for :user
@@ -146,7 +142,7 @@ describe Authem::Controller do
     it "can sign in admin using sign_in_admin method" do
       controller.sign_in_admin admin
       expect(controller.current_admin).to eq(admin)
-      expect(another_controller.current_admin).to eq(admin)
+      expect(reloaded_controller.current_admin).to eq(admin)
     end
 
     it "can sign in using sing_in method" do
@@ -155,7 +151,7 @@ describe Authem::Controller do
     end
 
     context "with signed in user and admin" do
-      let(:user){ User.create(email: "joe@example.com") }
+      let(:user) { User.create(email: "joe@example.com") }
       before do
         controller.sign_in_user user
         controller.sign_in_admin admin
@@ -163,7 +159,7 @@ describe Authem::Controller do
 
       after do
         expect(controller.current_admin).to eq(admin)
-        expect(another_controller.current_admin).to eq(admin)
+        expect(reloaded_controller.current_admin).to eq(admin)
       end
 
       it "can sign out user separately from admin using sign_out_user" do
@@ -177,8 +173,8 @@ describe Authem::Controller do
   end
 
   context "multiple roles with same model class" do
-    let(:user){ User.create(email: "joe@example.com") }
-    let(:customer){ User.create(email: "shmoe@example.com") }
+    let(:user) { User.create(email: "joe@example.com") }
+    let(:customer) { User.create(email: "shmoe@example.com") }
     let(:controller_klass) do
       Class.new(BaseController) do
         authem_for :user
@@ -190,8 +186,8 @@ describe Authem::Controller do
       controller.sign_in_user user
       expect(controller.current_user).to eq(user)
       expect(controller.current_customer).to be_nil
-      expect(another_controller.current_user).to eq(user)
-      expect(another_controller.current_customer).to be_nil
+      expect(reloaded_controller.current_user).to eq(user)
+      expect(reloaded_controller.current_customer).to be_nil
     end
 
     it "can sign in customer and user separately" do
@@ -199,8 +195,8 @@ describe Authem::Controller do
       controller.sign_in_customer customer
       expect(controller.current_user).to eq(user)
       expect(controller.current_customer).to eq(customer)
-      expect(another_controller.current_user).to eq(user)
-      expect(another_controller.current_customer).to eq(customer)
+      expect(reloaded_controller.current_user).to eq(user)
+      expect(reloaded_controller.current_customer).to eq(customer)
     end
 
     it "raises the error when sign in can't guess the model properly" do
