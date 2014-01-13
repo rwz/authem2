@@ -7,6 +7,7 @@ class TestMigration < ActiveRecord::Migration
   def up
     create_table :users do |t|
       t.string :email
+      t.string :password_digest, limit: 60
     end
 
     create_table :authem_sessions do |t|
