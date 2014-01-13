@@ -86,10 +86,9 @@ describe Authem::Controller do
 
     it "renews session ttl every time it is used" do
       session = controller.sign_in(user, ttl: 1.day)
-      session.update_column :expires_at, 1.minute
+      session.update_column :expires_at, 1.minute.from_now
       reloaded_controller.current_user
-      session.reload
-      # expect(session.reload.expires_at).to be_within(1).of(1.day)
+      expect(session.reload.expires_at).to be_within(1).of(1.day.from_now)
     end
 
     it "can sing in using sign_in method" do
