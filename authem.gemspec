@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary       = "Authem authenticates them by email"
   spec.description   = "Authem provides a simple solution for email-based authentication"
   spec.homepage      = "https://github.com/paulelliott/authem"
-  spec.license       = "WTFPL"
+  spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
