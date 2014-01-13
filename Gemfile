@@ -6,9 +6,8 @@ gemspec
 group :test do
   gem "activerecord",  "~> 4.0"
   gem "actionpack",    "~> 4.0"
+  gem "rspec"
   gem "rake"
-  gem "rspec-rails"
-  gem "capybara"
   gem "sqlite3"
   gem "pry-debugger"
 end
