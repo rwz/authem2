@@ -14,10 +14,5 @@ module Authem
     def email=(value)
       super value.try(:downcase)
     end
-
-    def authenticate(password)
-      return false if password.blank?
-      super(password)
-    end
   end
 end
