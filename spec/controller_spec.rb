@@ -158,7 +158,7 @@ describe Authem::Controller do
       expect(controller).to respond_to(:sign_out_user)
     end
 
-    context "when user id signed in" do
+    context "when user is signed in" do
       before do
         controller.sign_in user
         expect(controller.current_user).to eq(user)
