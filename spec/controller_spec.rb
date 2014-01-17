@@ -97,7 +97,7 @@ describe Authem::Controller do
 
     it "can store session token in a cookie when :remember option is used" do
       action = ->{ controller.sign_in user, remember: true }
-      expect(&action).to change{ cookies.keys.count }.by(1)
+      expect(&action).to change{ cookies.size }.by(1)
     end
 
     it "can restore user from cookie when session is lost" do
@@ -107,9 +107,9 @@ describe Authem::Controller do
     end
 
     it "does not use cookies by default" do
-      action = -> { controller.sign_in user }
-      expect(&action).not_to change{ cookies }
+      expect{ controller.sign_in user }.not_to change{ cookies }
     end
+
     it "returns session object on sign in" do
       result = controller.sign_in_user(user)
       expect(result).to be_kind_of(::Authem::Session)
@@ -159,21 +159,34 @@ describe Authem::Controller do
     end
 
     context "when user is signed in" do
+      let(:sign_in_options){ Hash.new }
+
       before do
-        controller.sign_in user
+        controller.sign_in user, sign_in_options
         expect(controller.current_user).to eq(user)
+      end
+
+      after do
+        expect(controller.current_user).to be_nil
+        expect(reloaded_controller.current_user).to be_nil
       end
 
       it "can sign out using sign_out_user method" do
         controller.sign_out_user
-        expect(controller.current_user).to be_nil
-        expect(reloaded_controller.current_user).to be_nil
       end
 
       it "can sign out using sign_out method" do
         controller.sign_out user
-        expect(controller.current_user).to be_nil
-        expect(reloaded_controller.current_user).to be_nil
+      end
+
+      context "with cookies" do
+        let(:sign_in_options){{ remember: true }}
+
+        after{ expect(cookies).to be_empty }
+
+        it "removes session token from cookies on sign out" do
+          controller.sign_out_user
+        end
       end
     end
 

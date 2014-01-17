@@ -66,6 +66,8 @@ module Authem
             ::Authem::Session.where(role: role, token: token).delete_all
           end
 
+          cookies.delete session_key
+
           session.delete session_key
         end
 
