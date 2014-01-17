@@ -26,14 +26,6 @@ class TestMigration < ActiveRecord::Migration
   end
 end
 
-class User < ActiveRecord::Base; end
-
-module MyNamespace
-  class SuperUser < ActiveRecord::Base
-    self.table_name = :users
-  end
-end
-
 RSpec.configure do |config|
   config.before(:suite) { TestMigration.new.up }
 

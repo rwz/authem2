@@ -1,6 +1,10 @@
 require "spec_helper"
 
 describe Authem::Session do
+  class User < ActiveRecord::Base
+    self.table_name = :users
+  end
+
   let(:user){ User.create(email: "joe@example.com") }
   let(:role){ :user }
 

@@ -2,6 +2,16 @@ require "spec_helper"
 
 
 describe Authem::Controller do
+  class User < ActiveRecord::Base
+    self.table_name = :users
+  end
+
+  module MyNamespace
+    class SuperUser < ActiveRecord::Base
+      self.table_name = :users
+    end
+  end
+
   class BaseController
     include Authem::Controller
 
