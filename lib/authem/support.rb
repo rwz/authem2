@@ -53,7 +53,7 @@ module Authem
           token = authem_session.token
           session[session_key] = token
           if remember
-            cookie_value = { value: token, expires: authem_session.expires_at }
+            cookie_value = { value: token, expires: authem_session.expires_at, domain: :all }
             cookies.signed[session_key] = cookie_value
           end
           authem_session
@@ -66,7 +66,7 @@ module Authem
             ::Authem::Session.where(role: role, token: token).delete_all
           end
 
-          cookies.delete session_key
+          cookies.delete session_key, domain: :all
 
           session.delete session_key
         end

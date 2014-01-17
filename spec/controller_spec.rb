@@ -29,6 +29,10 @@ describe Authem::Controller do
         super
       end
     end
+
+    def delete(key, *)
+      super key
+    end
   end
 
   def build_controller
