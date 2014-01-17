@@ -5,16 +5,43 @@ describe Authem::Controller do
   class BaseController
     include Authem::Controller
 
+    def clear_session!
+      self.session.clear
+    end
+
     def reloaded
-      self.class.new.tap{ |instance| instance.stub(session: self.session) }
+      self.class.new.tap do |controller|
+        controller.stub(
+          session: self.session,
+          cookies: self.cookies
+        )
+      end
+    end
+  end
+
+  class Cookie < HashWithIndifferentAccess
+    def permanent; self end
+    def signed; self end
+    def []=(key, value)
+      if Hash === value && value.key?(:expires)
+        super key, value.fetch(:value)
+      else
+        super
+      end
     end
   end
 
   def build_controller
-    controller_klass.new.tap{ |c| c.stub(session: HashWithIndifferentAccess.new) }
+    controller_klass.new.tap do |controller|
+      controller.stub(
+        session: HashWithIndifferentAccess.new,
+        cookies: cookies
+      )
+    end
   end
 
   let(:controller) { build_controller }
+  let(:cookies){ Cookie.new }
   let(:reloaded_controller) { controller.reloaded }
   let(:sessions_count){ ::Authem::Session.method(:count) }
 
@@ -68,6 +95,21 @@ describe Authem::Controller do
       expect(reloaded_controller.current_user).to eq(user)
     end
 
+    it "can store session token in a cookie when :remember option is used" do
+      action = ->{ controller.sign_in user, remember: true }
+      expect(&action).to change{ cookies.keys.count }.by(1)
+    end
+
+    it "can restore user from cookie when session is lost" do
+      controller.sign_in user, remember: true
+      controller.clear_session!
+      expect(controller.reloaded.current_user).to eq(user)
+    end
+
+    it "does not use cookies by default" do
+      action = -> { controller.sign_in user }
+      expect(&action).not_to change{ cookies }
+    end
     it "returns session object on sign in" do
       result = controller.sign_in_user(user)
       expect(result).to be_kind_of(::Authem::Session)

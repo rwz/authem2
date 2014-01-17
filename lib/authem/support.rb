@@ -35,7 +35,7 @@ module Authem
         define_method method_name do
           if instance_variable_defined?(ivar_name)
             instance_variable_get(ivar_name)
-          elsif token = session[session_key]
+          elsif token = session[session_key] || cookies.signed[session_key]
             authem_session = ::Authem::Session.active.find_by(role: role, token: token)
             subject = authem_session && authem_session.refresh && authem_session.subject
             instance_variable_set ivar_name, subject
@@ -48,8 +48,14 @@ module Authem
           raise ArgumentError if model.nil?
 
           instance_variable_set ivar_name, model
+          remember = options.fetch(:remember, false)
           authem_session = ::Authem::Session.create!(role: role, subject: model, ttl: options[:ttl])
-          session[session_key] = authem_session.token
+          token = authem_session.token
+          session[session_key] = token
+          if remember
+            cookie_value = { value: token, expires: authem_session.expires_at }
+            cookies.signed[session_key] = cookie_value
+          end
           authem_session
         end
 
