@@ -5,14 +5,25 @@ module Authem
     self.table_name = :authem_sessions
 
     belongs_to :subject, polymorphic: true
-    scope :by_subject, ->(model){ where(subject_type: model.class.name, subject_id: model.id) }
-    scope :active, ->{ where(arel_table[:expires_at].gteq(Time.zone.now)) }
-    scope :expired, ->{ where(arel_table[:expires_at].lt(Time.zone.now)) }
 
     before_create do
       self.token ||= SecureRandom.hex(40)
       self.ttl ||= 30.days
       self.expires_at ||= ttl_from_now
+    end
+
+    class << self
+      def by_subject(record)
+        where(subject_type: record.class.name, subject_id: record.id)
+      end
+
+      def active
+        where(arel_table[:expires_at].gteq(Time.zone.now))
+      end
+
+      def expired
+        where(arel_table[:expires_at].lt(Time.zone.now))
+      end
     end
 
     def refresh
