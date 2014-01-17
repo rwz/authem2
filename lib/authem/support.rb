@@ -10,15 +10,15 @@ module Authem
       @controller = controller
     end
 
-    def role_for(model)
-      raise ArgumentError if model.nil?
+    def role_for(record)
+      raise ArgumentError if record.nil?
 
       match = settings.each_with_object([]) do |(role, klass), array|
-        array << role if model.class == klass
+        array << role if record.class == klass
       end
 
-      raise UnknownRoleError.new(model) if match.empty?
-      raise AmbigousRoleError.new(model, match) unless match.one?
+      raise UnknownRoleError.new(record) if match.empty?
+      raise AmbigousRoleError.new(record, match) unless match.one?
 
       match.first
     end
@@ -44,12 +44,12 @@ module Authem
           end
         end
 
-        define_method "sign_in_#{role}" do |model, **options|
-          raise ArgumentError if model.nil?
+        define_method "sign_in_#{role}" do |record, **options|
+          raise ArgumentError if record.nil?
 
-          instance_variable_set ivar_name, model
+          instance_variable_set ivar_name, record
           remember = options.fetch(:remember, false)
-          authem_session = ::Authem::Session.create!(role: role, subject: model, ttl: options[:ttl])
+          authem_session = ::Authem::Session.create!(role: role, subject: record, ttl: options[:ttl])
           token = authem_session.token
           session[session_key] = token
           if remember
@@ -71,10 +71,10 @@ module Authem
           session.delete session_key
         end
 
-        define_method "clear_all_#{role}_sessions_for" do |model|
-          raise ArgumentError if model.nil?
+        define_method "clear_all_#{role}_sessions_for" do |record|
+          raise ArgumentError if record.nil?
           public_send "sign_out_#{role}"
-          ::Authem::Session.by_subject(model).where(role: role).delete_all
+          ::Authem::Session.by_subject(record).where(role: role).delete_all
         end
       end
     end
