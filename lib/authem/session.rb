@@ -6,8 +6,8 @@ module Authem
 
     belongs_to :subject, polymorphic: true
     scope :by_subject, ->(model){ where(subject_type: model.class.name, subject_id: model.id) }
-    scope :active, ->{ where(arel_table[:expires_at].gteq(Time.now)) }
-    scope :expired, ->{ where(arel_table[:expires_at].lt(Time.now)) }
+    scope :active, ->{ where(arel_table[:expires_at].gteq(Time.zone.now)) }
+    scope :expired, ->{ where(arel_table[:expires_at].lt(Time.zone.now)) }
 
     before_create do
       self.token ||= SecureRandom.hex(40)
