@@ -30,10 +30,12 @@ describe Authem::Controller do
   end
 
   class Cookie < HashWithIndifferentAccess
+    attr_reader :expires_at
     def permanent; self end
     def signed; self end
     def []=(key, value)
       if Hash === value && value.key?(:expires)
+        @expires_at = value[:expires]
         super key, value.fetch(:value)
       else
         super
@@ -139,11 +141,19 @@ describe Authem::Controller do
       expect(reloaded_controller.current_user).to be_nil
     end
 
-    it "renews session ttl every time it is used" do
+    it "renews session ttl each time it is used" do
       session = controller.sign_in(user, ttl: 1.day)
       session.update_column :expires_at, 1.minute.from_now
       reloaded_controller.current_user
       expect(session.reload.expires_at).to be_within(1).of(1.day.from_now)
+    end
+
+    it "renews cookie expiration date each time it is used" do
+      session = controller.sign_in(user, ttl: 1.day, remeber: true)
+      session.update_column :ttl, 1.month
+      reloaded_controller.current_user
+      expect(cookies.expires_at).to be_within(1).of(1.month.from_now)
+
     end
 
     it "can sing in using sign_in method" do

@@ -1,92 +1,93 @@
+require "active_support/core_ext/module/delegation"
 require "authem/session"
 require "authem/errors/ambigous_role"
 require "authem/errors/unknown_role"
 
 module Authem
   class Support
-    attr_reader :controller
+    attr_reader :role, :controller
 
-    def initialize(controller)
-      @controller = controller
+    def initialize(role, controller)
+      @role, @controller = role, controller
     end
 
-    def role_for(record)
+    def current
+      if ivar_defined?
+        ivar_get
+      else
+        ivar_set subject
+      end
+    end
+
+    def sign_in(record, **options)
       raise ArgumentError if record.nil?
-
-      match = settings.each_with_object([]) do |(role, klass), array|
-        array << role if record.class == klass
-      end
-
-      raise UnknownRoleError.new(record) if match.empty?
-      raise AmbigousRoleError.new(record, match) unless match.one?
-
-      match.first
+      ivar_set record
+      auth_session = Authem::Session.create!(role: role_name, subject: record, ttl: options[:ttl])
+      set_token auth_session, options
+      auth_session
     end
 
-    def define_authem(role, options = {})
-      method_name = "current_#{role}"
-      session_key = "authem_#{method_name}"
-      ivar_name   = "@_#{session_key}"
-      klass       = options.fetch(:model){ role.to_s.classify.constantize }
+    def sign_out
+      ivar_set nil
+      Authem::Session.where(role: role_name, token: auth_token).delete_all
+      cookies.delete key, domain: :all
+      session.delete key
+    end
 
-      self.settings = settings.merge(role.to_sym => klass)
+    def clear_for(record)
+      raise ArgumentError if record.nil?
+      sign_out
+      Authem::Session.by_subject(record).where(role: role_name).delete_all
+    end
 
-      controller.instance_eval do
-        define_method method_name do
-          if instance_variable_defined?(ivar_name)
-            instance_variable_get(ivar_name)
-          elsif token = session[session_key] || cookies.signed[session_key]
-            authem_session = ::Authem::Session.active.find_by(role: role, token: token)
-            subject = authem_session && authem_session.refresh && authem_session.subject
-            instance_variable_set ivar_name, subject
-          else
-            instance_variable_set ivar_name, nil
-          end
-        end
+    private
 
-        define_method "sign_in_#{role}" do |record, **options|
-          raise ArgumentError if record.nil?
+    delegate :role_name, to: :role
+    delegate :cookies, :session, to: :controller
 
-          instance_variable_set ivar_name, record
-          remember = options.fetch(:remember, false)
-          authem_session = ::Authem::Session.create!(role: role, subject: record, ttl: options[:ttl])
-          token = authem_session.token
-          session[session_key] = token
-          if remember
-            cookie_value = { value: token, expires: authem_session.expires_at, domain: :all }
-            cookies.signed[session_key] = cookie_value
-          end
-          authem_session
-        end
-
-        define_method "sign_out_#{role}" do
-          instance_variable_set ivar_name, nil
-
-          if token = session[session_key]
-            ::Authem::Session.where(role: role, token: token).delete_all
-          end
-
-          cookies.delete session_key, domain: :all
-
-          session.delete session_key
-        end
-
-        define_method "clear_all_#{role}_sessions_for" do |record|
-          raise ArgumentError if record.nil?
-          public_send "sign_out_#{role}"
-          ::Authem::Session.by_subject(record).where(role: role).delete_all
-        end
+    def set_token(auth_session, **option)
+      session[key] = auth_session.token
+      if option[:remember]
+        cookies.signed[key] = { value: auth_session.token, expires: auth_session.expires_at, domain: :all }
       end
     end
 
-    protected
-
-    def settings=(value)
-      controller.authem_settings = value
+    def subject
+      return unless auth_session.present?
+      refresh_session && auth_session.subject
     end
 
-    def settings
-      controller.authem_settings ||= {}
+    def refresh_session
+      auth_session && auth_session.refresh
+    end
+
+    def auth_session
+      return unless auth_token.present?
+      Authem::Session.active.find_by(role: role_name, token: auth_token)
+    end
+
+    def auth_token
+      session[key] || cookies[key]
+    end
+
+    def key
+      "authem_current_#{role_name}"
+    end
+
+    def ivar_defined?
+      controller.instance_variable_defined?(ivar_name)
+    end
+
+    def ivar_set(value)
+      controller.instance_variable_set ivar_name, value
+    end
+
+    def ivar_get
+      controller.instance_variable_get ivar_name
+    end
+
+    def ivar_name
+      @ivar_name ||= "@_#{key}".to_sym
     end
   end
 end
