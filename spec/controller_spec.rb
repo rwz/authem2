@@ -1,6 +1,5 @@
 require "spec_helper"
 
-
 describe Authem::Controller do
   class User < ActiveRecord::Base
     self.table_name = :users
@@ -29,7 +28,7 @@ describe Authem::Controller do
     end
   end
 
-  class Cookie < HashWithIndifferentAccess
+  class Cookies < HashWithIndifferentAccess
     attr_reader :expires_at
     def permanent; self end
     def signed; self end
@@ -51,13 +50,13 @@ describe Authem::Controller do
     controller_klass.new.tap do |controller|
       controller.stub(
         session: HashWithIndifferentAccess.new,
-        cookies: cookies
+        cookies: Cookies.new
       )
     end
   end
 
   let(:controller) { build_controller }
-  let(:cookies){ Cookie.new }
+  let(:cookies) { controller.cookies }
   let(:reloaded_controller) { controller.reloaded }
 
   context "with one role" do
@@ -88,22 +87,6 @@ describe Authem::Controller do
       expect{ controller.clear_all_user_sessions_for nil }.to raise_error(ArgumentError)
     end
 
-    context "with multiple sessions across devices" do
-      let(:first_device) { controller }
-      let(:second_device) { build_controller }
-
-      before do
-        first_device.sign_in user
-        second_device.sign_in user
-      end
-
-      it "signs out all currently active sessions on all devices" do
-        action = ->{ first_device.clear_all_user_sessions_for user }
-        expect(&action).to change(Authem::Session, :count).by(-2)
-        expect(second_device.reloaded.current_user).to be_nil
-      end
-    end
-
     it "can sign in user using sign_in_user method" do
       controller.sign_in_user user
       expect(controller.current_user).to eq(user)
@@ -112,7 +95,12 @@ describe Authem::Controller do
 
     it "can store session token in a cookie when :remember option is used" do
       action = ->{ controller.sign_in user, remember: true }
-      expect(&action).to change{ cookies.size }.by(1)
+      expect(&action).to change(cookies, :size).by(1)
+    end
+
+    it "sets cookie expiration date when :remember options is used" do
+      controller.sign_in user, remember: true, ttl: 1.week
+      expect(cookies.expires_at).to be_within(1).of(1.week.to_i.from_now)
     end
 
     it "can restore user from cookie when session is lost" do
@@ -122,7 +110,7 @@ describe Authem::Controller do
     end
 
     it "does not use cookies by default" do
-      expect{ controller.sign_in user }.not_to change{ cookies }
+      expect{ controller.sign_in user }.not_to change(cookies, :size)
     end
 
     it "returns session object on sign in" do
@@ -145,15 +133,14 @@ describe Authem::Controller do
       session = controller.sign_in(user, ttl: 1.day)
       session.update_column :expires_at, 1.minute.from_now
       reloaded_controller.current_user
-      expect(session.reload.expires_at).to be_within(1).of(1.day.from_now)
+      expect(session.reload.expires_at).to be_within(1).of(1.day.to_i.from_now)
     end
 
     it "renews cookie expiration date each time it is used" do
-      session = controller.sign_in(user, ttl: 1.day, remeber: true)
+      session = controller.sign_in(user, ttl: 1.day, remember: true)
       session.update_column :ttl, 1.month
       reloaded_controller.current_user
-      expect(cookies.expires_at).to be_within(1).of(1.month.from_now)
-
+      expect(cookies.expires_at).to be_within(1).of(1.month.to_i.from_now)
     end
 
     it "can sing in using sign_in method" do
@@ -210,6 +197,22 @@ describe Authem::Controller do
         it "removes session token from cookies on sign out" do
           controller.sign_out_user
         end
+      end
+    end
+
+    context "with multiple sessions across devices" do
+      let(:first_device) { controller }
+      let(:second_device) { build_controller }
+
+      before do
+        first_device.sign_in user
+        second_device.sign_in user
+      end
+
+      it "signs out all currently active sessions on all devices" do
+        action = ->{ first_device.clear_all_user_sessions_for user }
+        expect(&action).to change(Authem::Session, :count).by(-2)
+        expect(second_device.reloaded.current_user).to be_nil
       end
     end
 
