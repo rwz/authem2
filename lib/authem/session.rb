@@ -7,7 +7,7 @@ module Authem
     belongs_to :subject, polymorphic: true
 
     before_create do
-      self.token ||= SecureRandom.hex(40)
+      self.token ||= SecureRandom.hex(30)
       self.ttl ||= 30.days
       self.expires_at ||= ttl_from_now
     end

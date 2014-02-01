@@ -9,7 +9,7 @@ describe Authem::Session do
   let(:role){ :user }
 
   it "generates secure token on creation" do
-    expect(SecureRandom).to receive(:hex).with(40).and_return("a secure token")
+    expect(SecureRandom).to receive(:hex).with(30).and_return("a secure token")
     model = described_class.create(role: role, subject: user)
     expect(model.token).to eq("a secure token")
   end
