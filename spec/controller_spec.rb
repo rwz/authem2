@@ -15,14 +15,14 @@ describe Authem::Controller do
     include Authem::Controller
 
     def clear_session!
-      self.session.clear
+      session.clear
     end
 
     def reloaded
       self.class.new.tap do |controller|
         controller.stub(
-          session: self.session,
-          cookies: self.cookies
+          session: session,
+          cookies: cookies
         )
       end
     end
@@ -30,10 +30,15 @@ describe Authem::Controller do
 
   class Cookies < HashWithIndifferentAccess
     attr_reader :expires_at
-    def permanent; self end
-    def signed; self end
+
+    def permanent
+      self
+    end
+
+    alias_method :signed, :permanent
+
     def []=(key, value)
-      if Hash === value && value.key?(:expires)
+      if value.kind_of?(Hash) && value.key?(:expires)
         @expires_at = value[:expires]
         super key, value.fetch(:value)
       else
@@ -55,14 +60,14 @@ describe Authem::Controller do
     end
   end
 
-  let(:controller) { build_controller }
-  let(:cookies) { controller.cookies }
-  let(:reloaded_controller) { controller.reloaded }
+  let(:controller){ build_controller }
+  let(:cookies){ controller.cookies }
+  let(:reloaded_controller){ controller.reloaded }
 
   context "with one role" do
-    let(:user) { User.create(email: "joe@example.com") }
+    let(:user){ User.create(email: "joe@example.com") }
     let(:controller_klass) do
-      Class.new(BaseController) { authem_for :user }
+      Class.new(BaseController){ authem_for :user }
     end
 
     it "has current_user method" do
@@ -94,8 +99,7 @@ describe Authem::Controller do
     end
 
     it "can store session token in a cookie when :remember option is used" do
-      action = ->{ controller.sign_in user, remember: true }
-      expect(&action).to change(cookies, :size).by(1)
+      expect{ controller.sign_in user, remember: true }.to change(cookies, :size).by(1)
     end
 
     it "sets cookie expiration date when :remember options is used" do
@@ -201,8 +205,8 @@ describe Authem::Controller do
     end
 
     context "with multiple sessions across devices" do
-      let(:first_device) { controller }
-      let(:second_device) { build_controller }
+      let(:first_device){ controller }
+      let(:second_device){ build_controller }
 
       before do
         first_device.sign_in user
@@ -210,8 +214,7 @@ describe Authem::Controller do
       end
 
       it "signs out all currently active sessions on all devices" do
-        action = ->{ first_device.clear_all_user_sessions_for user }
-        expect(&action).to change(Authem::Session, :count).by(-2)
+        expect{ first_device.clear_all_user_sessions_for user }.to change(Authem::Session, :count).by(-2)
         expect(second_device.reloaded.current_user).to be_nil
       end
     end
@@ -231,7 +234,7 @@ describe Authem::Controller do
   end
 
   context "with multiple roles" do
-    let(:admin) { MyNamespace::SuperUser.create(email: "admin@example.com") }
+    let(:admin){ MyNamespace::SuperUser.create(email: "admin@example.com") }
     let(:controller_klass) do
       Class.new(BaseController) do
         authem_for :user
@@ -259,7 +262,7 @@ describe Authem::Controller do
     end
 
     context "with signed in user and admin" do
-      let(:user) { User.create(email: "joe@example.com") }
+      let(:user){ User.create(email: "joe@example.com") }
 
       before do
         controller.sign_in_user user
@@ -282,8 +285,8 @@ describe Authem::Controller do
   end
 
   context "multiple roles with same model class" do
-    let(:user) { User.create(email: "joe@example.com") }
-    let(:customer) { User.create(email: "shmoe@example.com") }
+    let(:user){ User.create(email: "joe@example.com") }
+    let(:customer){ User.create(email: "shmoe@example.com") }
     let(:controller_klass) do
       Class.new(BaseController) do
         authem_for :user
@@ -314,7 +317,7 @@ describe Authem::Controller do
     end
 
     it "allows to specify role with special :as option" do
-      expect(controller).to receive(:sign_in_customer).with(user, {})
+      expect(controller).to receive(:sign_in_customer).with(user, as: :customer)
       controller.sign_in user, as: :customer
     end
 

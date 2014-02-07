@@ -25,8 +25,16 @@ describe Authem::Session do
   end
 
   context "scopes" do
-    let!(:expired_session){ described_class.create(role: role, subject: user, expires_at: 1.day.ago) }
-    let!(:active_session){ described_class.create(role: role, subject: user, expires_at: 1.week.from_now) }
+    def create_session_with_expiration(expires_at)
+      described_class.create(
+        role:       role,
+        subject:    user,
+        expires_at: expires_at
+      )
+    end
+
+    let!(:expired_session){ create_session_with_expiration(1.day.ago) }
+    let!(:active_session){ create_session_with_expiration(1.week.from_now) }
     let(:active_scope){ described_class.active }
     let(:expired_scope){ described_class.expired }
 

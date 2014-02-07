@@ -40,5 +40,4 @@ module Authem
       end
     end
   end
-
 end

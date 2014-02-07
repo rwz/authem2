@@ -47,7 +47,7 @@ module Authem
     delegate :cookies, :session, to: :controller
 
     def check_record!(record)
-      raise ArgumentError if record.nil?
+      fail ArgumentError if record.nil?
     end
 
     def fetch_subject_by_token
@@ -72,9 +72,9 @@ module Authem
 
     def save_cookie(auth_session)
       cookie_value = {
-        value: auth_session.token,
+        value:   auth_session.token,
         expires: auth_session.expires_at,
-        domain: :all
+        domain:  :all
       }
       cookies.signed[key] = cookie_value
     end

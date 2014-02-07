@@ -5,18 +5,25 @@ describe Authem::User do
   class TestUser < ActiveRecord::Base
     self.table_name = :users
     include Authem::User
+
+
+    def self.create(email: "joe@example.com", password: "password")
+      super(
+        email:                 email,
+        password:              password,
+        password_confirmation: password
+      )
+    end
   end
 
-  let(:user_klass) { TestUser }
-
   it "downcases email" do
-    record = user_klass.new
+    record = TestUser.new
     record.email = "JOE@EXAMPLE.COM"
     expect(record.email).to eq("joe@example.com")
   end
 
   context "#authenticate" do
-    subject { user_klass.create(email: "joe@example.com", password: "secret", password_confirmation: "secret")  }
+    subject{ TestUser.create(password: "secret") }
 
     it "returns record if password is correct" do
       expect(subject.authenticate("secret")).to eq(subject)
@@ -33,23 +40,23 @@ describe Authem::User do
 
   context "validations" do
     it "allows properly formatted emails" do
-      record = user_klass.create(email: "joe@example.com")
+      record = TestUser.create(email: "joe@example.com")
       expect(record.errors).not_to include(:email)
     end
 
     it "validates email presence" do
-      record = user_klass.create(email: nil)
+      record = TestUser.create(email: nil)
       expect(record.errors).to include(:email)
     end
 
     it "validates email format" do
-      record = user_klass.create(email: "joe-at-example-com")
+      record = TestUser.create(email: "joe-at-example-com")
       expect(record.errors).to include(:email)
     end
 
     it "validates email uniqueness" do
-      user_klass.create(email: "joe@example.com", password: "123", password_confirmation: "123")
-      record = user_klass.create(email: "JOE@EXAMPLE.COM")
+      TestUser.create email: "joe@example.com"
+      record = TestUser.create(email: "JOE@EXAMPLE.COM")
       expect(record.errors).to include(:email)
     end
   end

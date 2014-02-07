@@ -6,9 +6,7 @@ module Authem
       has_many :authem_sessions, as: :subject, class_name: "Authem::Session"
       has_secure_password
 
-      validates :email,
-        uniqueness: true,
-        format: /\A\S+@\S+\z/
+      validates :email, uniqueness: true, format: /\A\S+@\S+\z/
     end
 
     def email=(value)

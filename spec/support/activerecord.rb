@@ -1,15 +1,23 @@
 require "active_record"
 
 ActiveRecord::Migration.verbose = false
-ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 
-class TestMigration < ActiveRecord::Migration
+ActiveRecord::Base.establish_connection(
+  adapter:  "sqlite3",
+  database: ":memory:"
+)
+
+class CreateUsersMigration < ActiveRecord::Migration
   def up
     create_table :users do |t|
       t.string :email
       t.string :password_digest, limit: 60
     end
+  end
+end
 
+class CreateSessionsMigration < ActiveRecord::Migration
+  def up
     create_table :authem_sessions do |t|
       t.string     :role,       null: false
       t.references :subject,    null: false, polymorphic: true
@@ -19,15 +27,13 @@ class TestMigration < ActiveRecord::Migration
       t.timestamps
     end
   end
-
-  def down
-    drop_table :users
-    drop_table :authem_sessions
-  end
 end
 
 RSpec.configure do |config|
-  config.before(:suite) { TestMigration.new.up }
+  config.before :suite do
+    CreateUsersMigration.new.up
+    CreateSessionsMigration.new.up
+  end
 
   config.around do |example|
     ActiveRecord::Base.transaction do

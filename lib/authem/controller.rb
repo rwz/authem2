@@ -9,7 +9,7 @@ module Authem
 
     module SessionManagementMethods
       def sign_in(model, **options)
-        role = options.delete(:as) || self.class.authem_role_for(model)
+        role = options.fetch(:as){ self.class.authem_role_for(model) }
         public_send "sign_in_#{role}", model, options
       end
 
@@ -31,12 +31,12 @@ module Authem
       end
 
       def authem_role_for(record)
-        raise ArgumentError if record.nil?
+        fail ArgumentError if record.nil?
 
-        matches = authem_roles.select { |role| record.class == role.klass }
+        matches = authem_roles.select{ |role| record.class == role.klass }
 
-        raise UnknownRoleError, record if matches.empty?
-        raise AmbigousRoleError, record => matches unless matches.one?
+        fail UnknownRoleError, record if matches.empty?
+        fail AmbigousRoleError, record => matches unless matches.one?
 
         matches.first.role_name
       end
