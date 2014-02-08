@@ -22,19 +22,71 @@ describe Authem::User do
     expect(record.email).to eq("joe@example.com")
   end
 
-  context "#authenticate" do
-    subject{ TestUser.create(password: "secret") }
+  subject(:user){ TestUser.create }
 
+  context "#authenticate" do
     it "returns record if password is correct" do
-      expect(subject.authenticate("secret")).to eq(subject)
+      expect(user.authenticate("password")).to eq(user)
     end
 
     it "returns false if password is incorrect" do
-      expect(subject.authenticate("notright")).to be_false
+      expect(user.authenticate("notright")).to be_false
     end
 
     it "returns false if password is nil" do
-      expect(subject.authenticate(nil)).to be_false
+      expect(user.authenticate(nil)).to be_false
+    end
+  end
+
+  context "#password_reset_token" do
+    it "generates token on record creation" do
+      expect(user.password_reset_token).to be_present
+    end
+  end
+
+  context "#reset_password" do
+    it "changes the password if on successful update" do
+      expect{ user.reset_password "123", "123" }.to change{ user.reload.password_digest }
+    end
+
+    it "regenerates password reset token on successful update" do
+      expect{ user.reset_password "123", "123" }.to change{ user.reload.password_reset_token }
+    end
+
+    it "does not change password on error" do
+      expect{ user.reset_password "123", "321" }.not_to change{ user.reload.password_digest }
+      expect{ user.reset_password "123", "" }.not_to change{ user.reload.password_digest }
+      expect{ user.reset_password nil, "321" }.not_to change{ user.reload.password_digest }
+      expect{ user.reset_password nil, nil }.not_to change{ user.reload.password_digest }
+    end
+
+    it "does not change password reset token on error" do
+      expect{ user.reset_password "123", "321" }.not_to change{ user.reload.password_reset_token }
+      expect{ user.reset_password "123", "" }.not_to change{ user.reload.password_reset_token }
+      expect{ user.reset_password nil, "321" }.not_to change{ user.reload.password_reset_token }
+      expect{ user.reset_password nil, nil }.not_to change{ user.reload.password_reset_token }
+    end
+
+    it "returns true if when password change is successful" do
+      expect(user.reset_password("123", "123")).to be_true
+    end
+
+    it "returns false when confirmation does not match" do
+      expect(user.reset_password("123", "321")).to be_false
+    end
+
+    it "adds an error when confirmation does not match" do
+      user.reset_password("123", "321")
+      expect(user.errors).to include(:password_confirmation)
+    end
+
+    it "adds and error when password is blank" do
+      user.reset_password(nil, "")
+      expect(user.errors).to include(:password)
+    end
+
+    it "returns false when password is blank" do
+      expect(user.reset_password("", "")).to be_false
     end
   end
 

@@ -11,7 +11,8 @@ class CreateUsersMigration < ActiveRecord::Migration
   def up
     create_table :users do |t|
       t.string :email
-      t.string :password_digest, limit: 60
+      t.string :password_digest,      limit: 60
+      t.string :password_reset_token, limit: 60
     end
   end
 end
