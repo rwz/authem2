@@ -10,9 +10,7 @@ module Authem
 
       validates :email, uniqueness: true, format: /\A\S+@\S+\z/
 
-      before_create do
-        self.password_reset_token = Authem::Token.generate
-      end
+      before_create{ self.password_reset_token = Authem::Token.generate }
     end
 
     def email=(value)
@@ -28,7 +26,7 @@ module Authem
       self.password = password
       self.password_confirmation = confirmation
 
-      save and update_column :password_reset_token, Authem::Token.generate
+      update_column :password_reset_token, Authem::Token.generate if save
     end
   end
 end
