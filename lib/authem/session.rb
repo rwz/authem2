@@ -1,4 +1,5 @@
 require "active_record"
+require "authem/token"
 
 module Authem
   class Session < ::ActiveRecord::Base
@@ -7,7 +8,7 @@ module Authem
     belongs_to :subject, polymorphic: true
 
     before_create do
-      self.token ||= SecureRandom.hex(30)
+      self.token ||= Authem::Token.generate
       self.ttl ||= 30.days
       self.expires_at ||= ttl_from_now
     end
