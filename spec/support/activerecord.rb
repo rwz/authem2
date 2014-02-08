@@ -11,8 +11,8 @@ class CreateUsersMigration < ActiveRecord::Migration
   def up
     create_table :users do |t|
       t.string :email
-      t.string :password_digest,      limit: 60
-      t.string :password_reset_token, limit: 60
+      t.string :password_digest
+      t.string :password_reset_token
     end
   end
 end
@@ -22,7 +22,7 @@ class CreateSessionsMigration < ActiveRecord::Migration
     create_table :authem_sessions do |t|
       t.string     :role,       null: false
       t.references :subject,    null: false, polymorphic: true
-      t.string     :token,      null: false, limit: 60
+      t.string     :token,      null: false
       t.datetime   :expires_at, null: false
       t.integer    :ttl,        null: false
       t.timestamps
